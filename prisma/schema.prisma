@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(ATHLETE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workoutSessions WorkoutSession[]
+  accounts        Account[]
+  sessions        Session[]
+}
+
+enum Role {
+  ATHLETE
+  ADMIN
+}
+
+// ─── NextAuth Adapter Tables ──────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Exercises ────────────────────────────────────────────────────────────────
+
+model Exercise {
+  id         String   @id @default(cuid())
+  name       String
+  notes      String?
+  youtubeUrl String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  benchmarks       Benchmark[]
+  keyExerciseSlots MonthlyKeyExercise[]
+  workoutSessions  WorkoutSession[]
+}
+
+model Benchmark {
+  id         String  @id @default(cuid())
+  exerciseId String
+  label      String
+  minWeight  Float
+  levelOrder Int
+
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseId, levelOrder])
+  @@index([exerciseId])
+}
+
+// ─── Monthly Key Exercises ────────────────────────────────────────────────────
+
+model MonthlyKeyExercise {
+  id         String @id @default(cuid())
+  monthKey   String
+  slot       Int
+  exerciseId String
+
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@unique([monthKey, slot])
+  @@index([monthKey])
+}
+
+// ─── Workout Logging ──────────────────────────────────────────────────────────
+
+model WorkoutSession {
+  id           String   @id @default(cuid())
+  userId       String
+  exerciseId   String
+  loggedAt     DateTime @default(now())
+  notes        String?
+  totalVolume  Float    @default(0)
+  estimated1RM Float    @default(0)
+  isVolumePR   Boolean  @default(false)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+  sets     WorkoutSet[]
+
+  @@index([userId, exerciseId, loggedAt])
+  @@index([userId, loggedAt])
+}
+
+model WorkoutSet {
+  id        String @id @default(cuid())
+  sessionId String
+  setNumber Int
+  weight    Float
+  reps      Int
+  volume    Float
+  epley1RM  Float
+
+  session WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
