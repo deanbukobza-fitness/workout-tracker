@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth'
+import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { currentMonthKey, hebrewMonthLabel, formatDate } from '@/lib/date-utils'
 import Link from 'next/link'
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Trophy } from 'lucide-react'
 
 export default async function DashboardPage() {
-  const session = await auth()
+  const session = await getSession()
   if (!session) return null
 
   const monthKey = currentMonthKey()

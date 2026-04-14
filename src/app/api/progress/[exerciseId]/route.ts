@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { bestEpley } from '@/lib/calculations'
 import { assignLevel, computeDistribution } from '@/lib/level-utils'
@@ -7,7 +7,7 @@ import { assignLevel, computeDistribution } from '@/lib/level-utils'
 type Params = { params: Promise<{ exerciseId: string }> }
 
 export async function GET(_req: NextRequest, { params }: Params) {
-  const session = await auth()
+  const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { exerciseId } = await params

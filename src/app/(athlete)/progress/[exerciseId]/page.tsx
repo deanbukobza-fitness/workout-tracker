@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth'
+import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { bestEpley } from '@/lib/calculations'
@@ -11,7 +11,7 @@ import { ChevronRight } from 'lucide-react'
 type Params = { params: Promise<{ exerciseId: string }> }
 
 export default async function ExerciseProgressPage({ params }: Params) {
-  const session = await auth()
+  const session = await getSession()
   if (!session) redirect('/login')
 
   const { exerciseId } = await params

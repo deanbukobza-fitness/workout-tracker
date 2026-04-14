@@ -1,10 +1,10 @@
-import { auth } from '@/lib/auth'
+import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { BarChart2 } from 'lucide-react'
 
 export default async function ProgressPage() {
-  const session = await auth()
+  const session = await getSession()
   if (!session) return null
 
   // Find all exercises the athlete has logged

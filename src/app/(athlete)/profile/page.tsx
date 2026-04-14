@@ -1,4 +1,4 @@
-import { auth, signOut } from '@/lib/auth'
+import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
@@ -7,7 +7,7 @@ import { formatDate } from '@/lib/date-utils'
 import { Trophy, Dumbbell, Calendar } from 'lucide-react'
 
 export default async function ProfilePage() {
-  const session = await auth()
+  const session = await getSession()
   if (!session) redirect('/login')
 
   const [sessionCount, prCount, lastSession] = await Promise.all([

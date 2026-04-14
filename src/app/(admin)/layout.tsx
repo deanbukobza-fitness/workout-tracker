@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { auth, signOut } from '@/lib/auth'
+import { getSession } from '@/lib/session'
 import { redirect } from 'next/navigation'
 
 const navItems = [
@@ -10,7 +10,7 @@ const navItems = [
 ]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth()
+  const session = await getSession()
   if (!session || session.user.role !== 'ADMIN') redirect('/dashboard')
 
   return (

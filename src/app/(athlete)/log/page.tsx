@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth'
+import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { currentMonthKey } from '@/lib/date-utils'
 import Link from 'next/link'
@@ -11,7 +11,7 @@ export default async function LogPage({
 }: {
   searchParams: Promise<{ q?: string }>
 }) {
-  await auth()
+  await getSession()
 
   const { q } = await searchParams
   const monthKey = currentMonthKey()
