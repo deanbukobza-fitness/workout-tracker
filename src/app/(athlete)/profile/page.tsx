@@ -61,7 +61,13 @@ export default async function ProfilePage() {
       <form
         action={async () => {
           'use server'
-          await signOut({ redirectTo: '/login' })
+          const { cookies } = await import('next/headers')
+          const { redirect } = await import('next/navigation')
+          const cookieJar = await cookies()
+          const isProduction = process.env.NODE_ENV === 'production'
+          const cookieName = isProduction ? '__Secure-authjs.session-token' : 'authjs.session-token'
+          cookieJar.delete(cookieName)
+          redirect('/login')
         }}
       >
         <Button variant="outline" className="w-full" type="submit">
