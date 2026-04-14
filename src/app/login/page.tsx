@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { loginAction } from '@/app/actions/auth'
 import Link from 'next/link'
 import { Suspense } from 'react'
@@ -37,9 +37,7 @@ function LoginContent() {
     <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-pink-50 to-purple-50">
       <Card className="w-full max-w-sm shadow-lg">
         <CardHeader className="text-center">
-          <div className="text-4xl mb-2">💪</div>
-          <CardTitle className="text-2xl">כניסה למערכת</CardTitle>
-          <CardDescription>סטודיו כוח לנשים</CardDescription>
+          <CardTitle className="text-3xl font-bold tracking-wide">Revive</CardTitle>
         </CardHeader>
         <CardContent>
           {registered && (
