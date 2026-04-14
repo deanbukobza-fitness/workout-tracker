@@ -19,7 +19,8 @@ export async function loginAction(formData: FormData) {
   if (!match) return { error: 'מייל או סיסמה שגויים' }
 
   const secret = process.env.AUTH_SECRET!
-  const cookieName = 'authjs.session-token'
+  const isProduction = process.env.NODE_ENV === 'production'
+  const cookieName = isProduction ? '__Secure-authjs.session-token' : 'authjs.session-token'
 
   const token = await encode({
     token: {
@@ -37,6 +38,7 @@ export async function loginAction(formData: FormData) {
   cookieJar.set(cookieName, token, {
     httpOnly: true,
     sameSite: 'lax',
+    secure: isProduction,
     path: '/',
     maxAge: 60 * 60 * 24 * 30, // 30 days
   })
