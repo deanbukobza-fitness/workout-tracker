@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { formatDate } from '@/lib/date-utils'
 import { Badge } from '@/components/ui/badge'
+import ResetPasswordButton from './ResetPasswordButton'
 
 export default async function AdminAthletesPage() {
   const now = new Date()
@@ -36,6 +37,7 @@ export default async function AdminAthletesPage() {
               <th className="text-center p-3 font-medium">אימונים</th>
               <th className="text-start p-3 font-medium">אימון אחרון</th>
               <th className="text-center p-3 font-medium">סטטוס</th>
+              <th className="text-center p-3 font-medium">פעולות</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -63,6 +65,9 @@ export default async function AdminAthletesPage() {
                     {status === 'new' && (
                       <Badge className="bg-blue-100 text-blue-700 border-blue-200">חדשה</Badge>
                     )}
+                  </td>
+                  <td className="p-3 text-center">
+                    <ResetPasswordButton athleteId={a.id} athleteName={a.name} />
                   </td>
                 </tr>
               )
