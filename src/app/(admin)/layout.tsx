@@ -11,6 +11,7 @@ const navItems = [
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
+  if (session?.user.role === 'KIOSK') redirect('/kiosk')
   if (!session || session.user.role !== 'ADMIN') redirect('/dashboard')
 
   return (

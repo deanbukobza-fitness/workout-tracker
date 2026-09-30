@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSession } from '@/lib/session'
+import { getSession, AppSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 
 type Params = { params: Promise<{ id: string }> }
+
+function canActOn(session: AppSession, ownerId: string) {
+  return ownerId === session.user.id || session.user.role === 'KIOSK' || session.user.role === 'ADMIN'
+}
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const session = await getSession()
@@ -17,7 +21,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     },
   })
 
-  if (!workoutSession || workoutSession.userId !== session.user.id) {
+  if (!workoutSession || !canActOn(session, workoutSession.userId)) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
@@ -31,7 +35,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params
   const workoutSession = await prisma.workoutSession.findUnique({ where: { id } })
 
-  if (!workoutSession || workoutSession.userId !== session.user.id) {
+  if (!workoutSession || !canActOn(session, workoutSession.userId)) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 

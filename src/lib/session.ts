@@ -8,7 +8,7 @@ export interface AppSession {
     id: string
     name: string
     email: string
-    role: 'ATHLETE' | 'ADMIN'
+    role: 'ATHLETE' | 'ADMIN' | 'KIOSK'
   }
 }
 
@@ -34,7 +34,7 @@ export async function getSession(): Promise<AppSession | null> {
         id: token.id as string ?? token.sub,
         name: token.name as string,
         email: token.email as string,
-        role: token.role as 'ATHLETE' | 'ADMIN',
+        role: token.role as 'ATHLETE' | 'ADMIN' | 'KIOSK',
       },
     }
   } catch {

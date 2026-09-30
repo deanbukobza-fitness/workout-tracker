@@ -26,6 +26,7 @@ model User {
 enum Role {
   ATHLETE
   ADMIN
+  KIOSK
 }
 
 // ─── NextAuth Adapter Tables ──────────────────────────────────────────────────
@@ -111,14 +112,15 @@ model MonthlyKeyExercise {
 // ─── Workout Logging ──────────────────────────────────────────────────────────
 
 model WorkoutSession {
-  id           String   @id @default(cuid())
+  id           String        @id @default(cuid())
   userId       String
   exerciseId   String
-  loggedAt     DateTime @default(now())
+  loggedAt     DateTime      @default(now())
   notes        String?
-  totalVolume  Float    @default(0)
-  estimated1RM Float    @default(0)
-  isVolumePR   Boolean  @default(false)
+  totalVolume  Float         @default(0)
+  estimated1RM Float         @default(0)
+  isVolumePR   Boolean       @default(false)
+  source       WorkoutSource @default(SELF)
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   exercise Exercise @relation(fields: [exerciseId], references: [id])
@@ -126,6 +128,11 @@ model WorkoutSession {
 
   @@index([userId, exerciseId, loggedAt])
   @@index([userId, loggedAt])
+}
+
+enum WorkoutSource {
+  SELF
+  KIOSK
 }
 
 model WorkoutSet {

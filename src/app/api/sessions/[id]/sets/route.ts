@@ -19,7 +19,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     where: { id: sessionId },
     include: { sets: true },
   })
-  if (!workoutSession || workoutSession.userId !== session.user.id) {
+  const isOwner = workoutSession?.userId === session.user.id
+  const isKioskOrAdmin = session.user.role === 'KIOSK' || session.user.role === 'ADMIN'
+  if (!workoutSession || (!isOwner && !isKioskOrAdmin)) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
@@ -48,7 +50,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   // Find prior sessions' best volume (exclude current session)
   const priorBest = await prisma.workoutSession.aggregate({
     where: {
-      userId: session.user.id,
+      userId: workoutSession.userId,
       exerciseId: workoutSession.exerciseId,
       id: { not: sessionId },
     },
