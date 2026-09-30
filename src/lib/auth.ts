@@ -10,11 +10,11 @@ declare module 'next-auth' {
       id: string
       name: string
       email: string
-      role: 'ATHLETE' | 'ADMIN'
+      role: 'ATHLETE' | 'ADMIN' | 'KIOSK'
     }
   }
   interface User {
-    role: 'ATHLETE' | 'ADMIN'
+    role: 'ATHLETE' | 'ADMIN' | 'KIOSK'
   }
 }
 
@@ -48,7 +48,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.role as 'ATHLETE' | 'ADMIN',
+          role: user.role as 'ATHLETE' | 'ADMIN' | 'KIOSK',
         }
       },
     }),

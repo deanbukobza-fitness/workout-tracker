@@ -43,7 +43,9 @@ export async function loginAction(formData: FormData) {
     maxAge: 60 * 60 * 24 * 30, // 30 days
   })
 
-  redirect(user.role === 'ADMIN' ? '/admin' : '/dashboard')
+  if (user.role === 'ADMIN') redirect('/admin')
+  if (user.role === 'KIOSK') redirect('/kiosk')
+  redirect('/dashboard')
 }
 
 export async function registerAction(

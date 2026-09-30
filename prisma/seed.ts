@@ -33,6 +33,20 @@ async function main() {
     },
   })
 
+  // Studio kiosk device account (limited role: only lists athlete names and
+  // logs sets on their behalf — see /kiosk)
+  const kioskHash = await bcrypt.hash('kiosk123', 12)
+  await prisma.user.upsert({
+    where: { email: 'kiosk@studio.co.il' },
+    update: {},
+    create: {
+      email: 'kiosk@studio.co.il',
+      name: 'קיוסק הסטודיו',
+      passwordHash: kioskHash,
+      role: 'KIOSK',
+    },
+  })
+
   // Exercises
   const exercises = [
     {
@@ -125,6 +139,7 @@ async function main() {
   console.log('✅ Seed complete')
   console.log('   Admin: admin@studio.co.il / admin123')
   console.log('   Athlete: demo@studio.co.il / athlete123')
+  console.log('   Kiosk:   kiosk@studio.co.il / kiosk123 (change before real use!)')
 }
 
 main()
