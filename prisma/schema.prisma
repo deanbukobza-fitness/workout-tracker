@@ -74,6 +74,11 @@ model Exercise {
   name       String
   notes      String?
   youtubeUrl String?
+  // workout-builder's Exercise.id, for exercises pulled from there. Null for
+  // exercises created locally. Used to match the daily-exercise sync by id
+  // instead of by name.
+  externalId Int?     @unique
+  isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

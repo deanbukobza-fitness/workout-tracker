@@ -7,7 +7,11 @@ export default async function KeyExercisesPage() {
   const monthKey = currentMonthKey()
 
   const [exercises, currentSlots] = await Promise.all([
-    prisma.exercise.findMany({ orderBy: { name: 'asc' }, select: { id: true, name: true } }),
+    prisma.exercise.findMany({
+      where: { isActive: true },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true },
+    }),
     prisma.monthlyKeyExercise.findMany({
       where: { monthKey },
       orderBy: { slot: 'asc' },

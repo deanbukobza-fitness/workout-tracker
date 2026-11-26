@@ -83,23 +83,24 @@ export async function POST() {
   }
 
   const item = data.items[0]
-  const names = [item.slot1_exercise_name, item.slot2_exercise_name]
-  const exercises = await prisma.exercise.findMany({ where: { name: { in: names } } })
-  const byName = new Map(exercises.map((e) => [e.name, e]))
+  const externalIds = [item.slot1_exercise_id, item.slot2_exercise_id]
+  const exercises = await prisma.exercise.findMany({ where: { externalId: { in: externalIds } } })
+  const byExternalId = new Map(exercises.map((e) => [e.externalId, e]))
 
-  const unmatched = names.filter((n) => !byName.has(n))
+  const unmatched = externalIds.filter((id) => !byExternalId.has(id))
   if (unmatched.length > 0) {
     return NextResponse.json(
       {
-        error: `לא נמצאו תרגילים תואמים בשם (בדיוק): ${unmatched.join(', ')}. יש ליצור תרגיל עם אותו שם בדיוק.`,
+        error:
+          'חלק מתרגילי היום לא נמצאו בקטלוג המקומי. לחצי על "סנכרן קטלוג תרגילים" בעמוד התרגילים ונסי שוב.',
       },
       { status: 422 }
     )
   }
 
   const date = new Date(data.date)
-  const slot1Exercise = byName.get(item.slot1_exercise_name)!
-  const slot2Exercise = byName.get(item.slot2_exercise_name)!
+  const slot1Exercise = byExternalId.get(item.slot1_exercise_id)!
+  const slot2Exercise = byExternalId.get(item.slot2_exercise_id)!
 
   await prisma.$transaction([
     prisma.dailyKeyExercise.deleteMany({ where: { date } }),
