@@ -19,6 +19,13 @@ export function formatDate(date: Date | string): string {
   return d.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
+// Today's calendar date at UTC midnight - matches how dates round-trip through
+// Postgres DATE columns and plain "YYYY-MM-DD" strings from external APIs
+export function todayDateOnly(): Date {
+  const now = new Date()
+  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
+}
+
 // Days since a date
 export function daysSince(date: Date | string): number {
   const d = typeof date === 'string' ? new Date(date) : date

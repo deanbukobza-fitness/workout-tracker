@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { currentMonthKey, hebrewMonthLabel } from '@/lib/date-utils'
 import KeyExercisePicker from './KeyExercisePicker'
+import SyncDailyExercisesButton from './SyncDailyExercisesButton'
 
 export default async function KeyExercisesPage() {
   const monthKey = currentMonthKey()
@@ -20,6 +21,8 @@ export default async function KeyExercisesPage() {
         <h1 className="text-2xl font-bold">תרגילי מפתח חודשיים</h1>
         <p className="text-muted-foreground text-sm mt-1">{hebrewMonthLabel(monthKey)}</p>
       </div>
+
+      <SyncDailyExercisesButton />
 
       <KeyExercisePicker
         monthKey={monthKey}

@@ -1,6 +1,6 @@
 import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
-import { currentMonthKey, hebrewMonthLabel, formatDate } from '@/lib/date-utils'
+import { currentMonthKey, hebrewMonthLabel, formatDate, todayDateOnly } from '@/lib/date-utils'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,12 +12,21 @@ export default async function DashboardPage() {
 
   const monthKey = currentMonthKey()
 
-  // Key exercises for this month
-  const keyExercises = await prisma.monthlyKeyExercise.findMany({
-    where: { monthKey },
+  // Today's exercises, synced from the workout-builder plan calendar
+  const dailyKeyExercises = await prisma.dailyKeyExercise.findMany({
+    where: { date: todayDateOnly() },
     include: { exercise: true },
     orderBy: { slot: 'asc' },
   })
+
+  // Fallback: this month's 4 key exercises (used until a daily sync has run)
+  const keyExercises = dailyKeyExercises.length > 0
+    ? []
+    : await prisma.monthlyKeyExercise.findMany({
+        where: { monthKey },
+        include: { exercise: true },
+        orderBy: { slot: 'asc' },
+      })
 
   // Recent sessions
   const recentSessions = await prisma.workoutSession.findMany({
@@ -39,13 +48,13 @@ export default async function DashboardPage() {
       {/* Key exercises */}
       <section>
         <h2 className="font-bold text-lg mb-3 flex items-center gap-2">
-          🔑 תרגילי המפתח החודש
+          {dailyKeyExercises.length > 0 ? '🔑 תרגילי היום' : '🔑 תרגילי המפתח החודש'}
         </h2>
-        {keyExercises.length === 0 ? (
-          <p className="text-muted-foreground text-sm">לא הוגדרו תרגילי מפתח לחודש זה</p>
+        {dailyKeyExercises.length === 0 && keyExercises.length === 0 ? (
+          <p className="text-muted-foreground text-sm">לא הוגדרו תרגילי מפתח להיום</p>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            {keyExercises.map(({ slot, exercise }) => (
+            {(dailyKeyExercises.length > 0 ? dailyKeyExercises : keyExercises).map(({ slot, exercise }) => (
               <Link key={slot} href={`/log/${exercise.id}`}>
                 <Card className="hover:shadow-md transition-shadow cursor-pointer border-pink-200 bg-pink-50 hover:bg-pink-100">
                   <CardContent className="p-3">
