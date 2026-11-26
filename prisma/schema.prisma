@@ -77,9 +77,10 @@ model Exercise {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  benchmarks       Benchmark[]
-  keyExerciseSlots MonthlyKeyExercise[]
-  workoutSessions  WorkoutSession[]
+  benchmarks            Benchmark[]
+  keyExerciseSlots      MonthlyKeyExercise[]
+  dailyKeyExerciseSlots DailyKeyExercise[]
+  workoutSessions       WorkoutSession[]
 }
 
 model Benchmark {
@@ -107,6 +108,21 @@ model MonthlyKeyExercise {
 
   @@unique([monthKey, slot])
   @@index([monthKey])
+}
+
+// ─── Daily Key Exercises (synced from the workout-builder plan calendar) ──────
+
+model DailyKeyExercise {
+  id         String   @id @default(cuid())
+  date       DateTime @db.Date
+  slot       Int
+  exerciseId String
+  syncedAt   DateTime @default(now())
+
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@unique([date, slot])
+  @@index([date])
 }
 
 // ─── Workout Logging ──────────────────────────────────────────────────────────
