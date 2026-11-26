@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 
@@ -21,11 +21,14 @@ async function loginToWorkoutBuilder(baseUrl: string, email: string, password: s
   return data.access_token as string
 }
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const session = await getSession()
   if (!session || session.user.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  const body = await req.json().catch(() => ({}))
+  const libraryId: number | undefined = body?.libraryId
 
   const baseUrl = process.env.WORKOUT_BUILDER_API_URL
   const email = process.env.WORKOUT_BUILDER_SYNC_EMAIL
@@ -43,10 +46,9 @@ export async function POST() {
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 502 })
   }
+  const authHeader = { Authorization: `Bearer ${token}` }
 
-  const res = await fetch(`${baseUrl}/exercises`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
+  const res = await fetch(`${baseUrl}/exercises`, { headers: authHeader })
   if (!res.ok) {
     return NextResponse.json(
       { error: `שליפת רשימת התרגילים מ-workout-builder נכשלה (${res.status})` },
@@ -54,12 +56,28 @@ export async function POST() {
     )
   }
   const remoteExercises: WorkoutBuilderExercise[] = await res.json()
-  const activeRemoteIds = remoteExercises.filter((e) => e.is_active).map((e) => e.id)
+  // The true active/inactive state across the whole catalog, regardless of
+  // which library this particular sync imports from - a library filter below
+  // only narrows what gets imported, never what counts as "really inactive".
+  const trulyActiveIds = remoteExercises.filter((e) => e.is_active).map((e) => e.id)
+
+  let toImport = remoteExercises.filter((e) => e.is_active)
+  if (libraryId) {
+    const libRes = await fetch(`${baseUrl}/libraries/${libraryId}/exercises`, { headers: authHeader })
+    if (!libRes.ok) {
+      return NextResponse.json(
+        { error: `שליפת תרגילי המאגר מ-workout-builder נכשלה (${libRes.status})` },
+        { status: 502 }
+      )
+    }
+    const libraryIds: number[] = await libRes.json()
+    const librarySet = new Set(libraryIds)
+    toImport = toImport.filter((e) => librarySet.has(e.id))
+  }
 
   let created = 0
   let updated = 0
-  for (const remote of remoteExercises) {
-    if (!remote.is_active) continue
+  for (const remote of toImport) {
     const result = await prisma.exercise.upsert({
       where: { externalId: remote.id },
       update: { name: remote.name, isActive: true },
@@ -69,9 +87,10 @@ export async function POST() {
     else updated++
   }
 
-  // Exercises pulled from workout-builder that are no longer active there
+  // Exercises pulled from workout-builder that are no longer active there at
+  // all (not merely outside the chosen library)
   const { count: hiddenRemote } = await prisma.exercise.updateMany({
-    where: { externalId: { not: null, notIn: activeRemoteIds } },
+    where: { externalId: { not: null, notIn: trulyActiveIds } },
     data: { isActive: false },
   })
 
@@ -87,6 +106,6 @@ export async function POST() {
     updated,
     hiddenRemote,
     hiddenLegacy,
-    total: remoteExercises.length,
+    total: toImport.length,
   })
 }
