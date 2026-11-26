@@ -5,12 +5,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { formatDate } from '@/lib/date-utils'
 import { Trophy, Dumbbell, Calendar } from 'lucide-react'
+import BodyweightForm from '@/components/profile/BodyweightForm'
 
 export default async function ProfilePage() {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const [sessionCount, prCount, lastSession] = await Promise.all([
+  const [sessionCount, prCount, lastSession, me] = await Promise.all([
     prisma.workoutSession.count({ where: { userId: session.user.id } }),
     prisma.workoutSession.count({ where: { userId: session.user.id, isVolumePR: true } }),
     prisma.workoutSession.findFirst({
@@ -18,6 +19,7 @@ export default async function ProfilePage() {
       orderBy: { loggedAt: 'desc' },
       select: { loggedAt: true },
     }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { bodyweightKg: true } }),
   ])
 
   return (
@@ -56,6 +58,8 @@ export default async function ProfilePage() {
           </CardContent>
         </Card>
       </div>
+
+      <BodyweightForm initialBodyweightKg={me?.bodyweightKg ?? null} />
 
       {/* Sign out */}
       <form

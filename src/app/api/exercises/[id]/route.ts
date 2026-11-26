@@ -26,9 +26,29 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const { id } = await params
   const body = await req.json()
   const { name, notes, youtubeUrl, benchmarks } = body
+  const incoming = (benchmarks || []) as { label: string; minWeight: number; levelOrder: number }[]
 
-  // Replace benchmarks: delete all, re-create
-  await prisma.benchmark.deleteMany({ where: { exerciseId: id } })
+  // Upsert benchmarks by (exerciseId, levelOrder) rather than delete+recreate,
+  // so a benchmark's id - and any bodyweight-curve points cascaded from it -
+  // survives a plain name/notes edit
+  const incomingLevelOrders = incoming.map((b) => Number(b.levelOrder))
+  await prisma.benchmark.deleteMany({
+    where: { exerciseId: id, levelOrder: { notIn: incomingLevelOrders } },
+  })
+  await Promise.all(
+    incoming.map((b) =>
+      prisma.benchmark.upsert({
+        where: { exerciseId_levelOrder: { exerciseId: id, levelOrder: Number(b.levelOrder) } },
+        update: { label: b.label, minWeight: Number(b.minWeight) },
+        create: {
+          exerciseId: id,
+          label: b.label,
+          minWeight: Number(b.minWeight),
+          levelOrder: Number(b.levelOrder),
+        },
+      })
+    )
+  )
 
   const exercise = await prisma.exercise.update({
     where: { id },
@@ -36,15 +56,6 @@ export async function PUT(req: NextRequest, { params }: Params) {
       name,
       notes: notes || null,
       youtubeUrl: youtubeUrl || null,
-      benchmarks: {
-        create: (benchmarks || []).map(
-          (b: { label: string; minWeight: number; levelOrder: number }) => ({
-            label: b.label,
-            minWeight: Number(b.minWeight),
-            levelOrder: Number(b.levelOrder),
-          })
-        ),
-      },
     },
     include: { benchmarks: { orderBy: { levelOrder: 'asc' } } },
   })

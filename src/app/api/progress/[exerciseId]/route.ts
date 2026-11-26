@@ -15,7 +15,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   // Fetch exercise with benchmarks
   const exercise = await prisma.exercise.findUnique({
     where: { id: exerciseId },
-    include: { benchmarks: { orderBy: { levelOrder: 'asc' } } },
+    include: { benchmarks: { orderBy: { levelOrder: 'asc' }, include: { points: true } } },
   })
   if (!exercise) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
@@ -29,6 +29,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
   // My best 1RM
   const myBest1RM =
     mySessions.length > 0 ? Math.max(...mySessions.map((s) => s.estimated1RM)) : 0
+  const me = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { bodyweightKg: true },
+  })
 
   // Studio-wide: fetch best 1RM per athlete who has logged this exercise
   const allAthletesSessions = await prisma.workoutSession.groupBy({
@@ -36,13 +40,21 @@ export async function GET(_req: NextRequest, { params }: Params) {
     where: { exerciseId },
     _max: { estimated1RM: true },
   })
-  const athleteBest1RMs = allAthletesSessions.map((a) => a._max.estimated1RM ?? 0)
+  const athleteUsers = await prisma.user.findMany({
+    where: { id: { in: allAthletesSessions.map((a) => a.userId) } },
+    select: { id: true, bodyweightKg: true },
+  })
+  const bodyweightByUserId = new Map(athleteUsers.map((u) => [u.id, u.bodyweightKg]))
+  const athletes = allAthletesSessions.map((a) => ({
+    best1RM: a._max.estimated1RM ?? 0,
+    bodyweightKg: bodyweightByUserId.get(a.userId),
+  }))
 
   // Compute level distribution
-  const distribution = computeDistribution(athleteBest1RMs, exercise.benchmarks)
+  const distribution = computeDistribution(athletes, exercise.benchmarks)
 
   // My current level
-  const myLevel = assignLevel(myBest1RM, exercise.benchmarks)
+  const myLevel = assignLevel(myBest1RM, exercise.benchmarks, me?.bodyweightKg)
 
   return NextResponse.json({
     exercise,
@@ -57,6 +69,6 @@ export async function GET(_req: NextRequest, { params }: Params) {
     myBest1RM,
     myLevel,
     distribution,
-    totalStudioAthletes: athleteBest1RMs.length,
+    totalStudioAthletes: athletes.length,
   })
 }
