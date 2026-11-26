@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Plus, Pencil } from 'lucide-react'
 import DeleteExerciseButton from './DeleteExerciseButton'
+import SyncExerciseCatalogButton from './SyncExerciseCatalogButton'
 
 export default async function AdminExercisesPage() {
   const exercises = await prisma.exercise.findMany({
@@ -25,16 +26,23 @@ export default async function AdminExercisesPage() {
         </Link>
       </div>
 
+      <SyncExerciseCatalogButton />
+
       <div className="space-y-3">
         {exercises.map((ex) => (
           <div
             key={ex.id}
-            className="rounded-lg border border-border bg-card p-4"
+            className={`rounded-lg border border-border bg-card p-4 ${!ex.isActive ? 'opacity-50' : ''}`}
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="font-semibold">{ex.name}</h3>
+                  {!ex.isActive && (
+                    <span className="text-xs rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+                      לא פעיל
+                    </span>
+                  )}
                   {ex.youtubeUrl && (
                     <span className="text-xs text-red-500 font-medium">▶ YouTube</span>
                   )}

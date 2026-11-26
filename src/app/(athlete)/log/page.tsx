@@ -23,7 +23,10 @@ export default async function LogPage({
       orderBy: { slot: 'asc' },
     }),
     prisma.exercise.findMany({
-      where: q ? { name: { contains: q, mode: 'insensitive' } } : undefined,
+      where: {
+        isActive: true,
+        ...(q ? { name: { contains: q, mode: 'insensitive' } } : {}),
+      },
       orderBy: { name: 'asc' },
     }),
   ])
