@@ -56,12 +56,13 @@ export async function POST(req: NextRequest) {
     )
   }
   const remoteExercises: WorkoutBuilderExercise[] = await res.json()
-  // The true active/inactive state across the whole catalog, regardless of
-  // which library this particular sync imports from - a library filter below
-  // only narrows what gets imported, never what counts as "really inactive".
-  const trulyActiveIds = remoteExercises.filter((e) => e.is_active).map((e) => e.id)
 
   let toImport = remoteExercises.filter((e) => e.is_active)
+  // The set of ids this sync considers "in scope": everything active, unless
+  // a library is chosen, in which case scope narrows to just that library -
+  // and anything active but outside it gets hidden below, same as something
+  // truly deactivated in workout-builder.
+  let scopedActiveIds = toImport.map((e) => e.id)
   if (libraryId) {
     const libRes = await fetch(`${baseUrl}/libraries/${libraryId}/exercises`, { headers: authHeader })
     if (!libRes.ok) {
@@ -73,6 +74,7 @@ export async function POST(req: NextRequest) {
     const libraryIds: number[] = await libRes.json()
     const librarySet = new Set(libraryIds)
     toImport = toImport.filter((e) => librarySet.has(e.id))
+    scopedActiveIds = toImport.map((e) => e.id)
   }
 
   let created = 0
@@ -87,10 +89,10 @@ export async function POST(req: NextRequest) {
     else updated++
   }
 
-  // Exercises pulled from workout-builder that are no longer active there at
-  // all (not merely outside the chosen library)
+  // Exercises outside this sync's scope: truly deactivated in workout-builder,
+  // or (when a library is chosen) simply not part of that library
   const { count: hiddenRemote } = await prisma.exercise.updateMany({
-    where: { externalId: { not: null, notIn: trulyActiveIds } },
+    where: { externalId: { not: null, notIn: scopedActiveIds } },
     data: { isActive: false },
   })
 
