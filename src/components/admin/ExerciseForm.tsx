@@ -7,10 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import YouTubeEmbed from '@/components/shared/YouTubeEmbed'
-import { Plus, Trash2, GripVertical } from 'lucide-react'
 
 interface BenchmarkRow {
-  id: string
+  levelOrder: number
   label: string
   minWeight: string
 }
@@ -27,7 +26,9 @@ interface Props {
   initialData?: ExerciseData
 }
 
-const DEFAULT_LABELS = ['מתחילה', 'מתחילה+', 'ביניים', 'ביניים+', 'מתקדמת']
+// Fixed, studio-wide levels - the 5th strengthlevel.com tier (Elite) is
+// dropped on purpose, it's too far from what's relevant for studio athletes
+const LEVEL_LABELS = ['מתאמנת', 'מבינה עניין', 'מתקדמת', 'מקצוענית']
 
 export default function ExerciseForm({ initialData }: Props) {
   const router = useRouter()
@@ -37,26 +38,17 @@ export default function ExerciseForm({ initialData }: Props) {
   const [notes, setNotes] = useState(initialData?.notes ?? '')
   const [youtubeUrl, setYoutubeUrl] = useState(initialData?.youtubeUrl ?? '')
   const [benchmarks, setBenchmarks] = useState<BenchmarkRow[]>(
-    initialData?.benchmarks.map((b) => ({
-      id: String(b.levelOrder),
-      label: b.label,
-      minWeight: String(b.minWeight),
-    })) ?? DEFAULT_LABELS.map((label, i) => ({ id: String(i + 1), label, minWeight: '' }))
+    LEVEL_LABELS.map((label, i) => {
+      const levelOrder = i + 1
+      const existing = initialData?.benchmarks.find((b) => b.levelOrder === levelOrder)
+      return { levelOrder, label, minWeight: existing ? String(existing.minWeight) : '' }
+    })
   )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  function updateBenchmark(id: string, field: 'label' | 'minWeight', value: string) {
-    setBenchmarks((prev) => prev.map((b) => (b.id === id ? { ...b, [field]: value } : b)))
-  }
-
-  function addBenchmark() {
-    const newId = String(Date.now())
-    setBenchmarks((prev) => [...prev, { id: newId, label: '', minWeight: '' }])
-  }
-
-  function removeBenchmark(id: string) {
-    setBenchmarks((prev) => prev.filter((b) => b.id !== id))
+  function updateBenchmark(levelOrder: number, value: string) {
+    setBenchmarks((prev) => prev.map((b) => (b.levelOrder === levelOrder ? { ...b, minWeight: value } : b)))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -64,19 +56,15 @@ export default function ExerciseForm({ initialData }: Props) {
     setError(null)
     setLoading(true)
 
-    const validBenchmarks = benchmarks
-      .filter((b) => b.label && b.minWeight)
-      .map((b, i) => ({
-        label: b.label,
-        minWeight: Number(b.minWeight),
-        levelOrder: i + 1,
-      }))
-
     const payload = {
       name: name.trim(),
       notes: notes.trim() || null,
       youtubeUrl: youtubeUrl.trim() || null,
-      benchmarks: validBenchmarks,
+      benchmarks: benchmarks.map((b) => ({
+        label: b.label,
+        minWeight: Number(b.minWeight) || 0,
+        levelOrder: b.levelOrder,
+      })),
     }
 
     try {
@@ -144,28 +132,17 @@ export default function ExerciseForm({ initialData }: Props) {
 
       {/* Benchmarks */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Label>רמות ואמות מידה (1RM בק״ג)</Label>
-          <Button type="button" variant="outline" size="sm" onClick={addBenchmark}>
-            <Plus size={14} className="ms-1" />
-            הוסיפי רמה
-          </Button>
-        </div>
+        <Label>רמות ואמות מידה (1RM בק״ג)</Label>
         <div className="space-y-2">
-          {benchmarks.map((b, idx) => (
-            <div key={b.id} className="flex items-center gap-2">
+          {benchmarks.map((b) => (
+            <div key={b.levelOrder} className="flex items-center gap-2">
               <span className="text-muted-foreground text-sm w-5 text-center shrink-0">
-                {idx + 1}
+                {b.levelOrder}
               </span>
-              <Input
-                value={b.label}
-                onChange={(e) => updateBenchmark(b.id, 'label', e.target.value)}
-                placeholder="שם הרמה (לדוגמה: מתחילה)"
-                className="flex-1"
-              />
+              <span className="flex-1 text-sm">{b.label}</span>
               <Input
                 value={b.minWeight}
-                onChange={(e) => updateBenchmark(b.id, 'minWeight', e.target.value)}
+                onChange={(e) => updateBenchmark(b.levelOrder, e.target.value)}
                 placeholder="משקל מינ׳"
                 type="number"
                 min={0}
@@ -173,20 +150,12 @@ export default function ExerciseForm({ initialData }: Props) {
                 className="w-24 text-center"
               />
               <span className="text-xs text-muted-foreground shrink-0">ק״ג+</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-red-400 hover:text-red-600 hover:bg-red-50 shrink-0"
-                onClick={() => removeBenchmark(b.id)}
-              >
-                <Trash2 size={14} />
-              </Button>
             </div>
           ))}
         </div>
         <p className="text-xs text-muted-foreground">
-          הרמות מוצגות בסדר עולה. מתאמנת תוצב ברמה הגבוהה ביותר שאליה הגיעה.
+          הרמות מוצגות בסדר עולה. מתאמנת תוצב ברמה הגבוהה ביותר שאליה הגיעה. אפשר למלא את
+          המשקלים ידנית, או לסנכרן אותם אוטומטית מ-strengthlevel.com למעלה.
         </p>
       </div>
 
