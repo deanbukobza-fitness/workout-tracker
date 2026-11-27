@@ -1,7 +1,6 @@
 import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import { bestEpley } from '@/lib/calculations'
 import { assignLevel, computeDistribution } from '@/lib/level-utils'
 import LevelIndicator from '@/components/progress/LevelIndicator'
 import ProgressCharts from '@/components/progress/ProgressCharts'

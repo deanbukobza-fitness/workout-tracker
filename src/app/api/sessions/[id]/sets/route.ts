@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
-import { epley1RM, sessionVolume, bestEpley, isNewVolumePR } from '@/lib/calculations'
+import {
+  brzycki1RM,
+  sessionVolume,
+  bestBrzycki,
+  isNewVolumePR,
+  isNewRepMaxPR,
+} from '@/lib/calculations'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -28,7 +34,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   // Determine set number
   const setNumber = workoutSession.sets.length + 1
   const setVolume = weight * reps
-  const setEpley = epley1RM(weight, reps)
+  const setOneRepMax = brzycki1RM(weight, reps)
 
   // Create the set
   const newSet = await prisma.workoutSet.create({
@@ -38,27 +44,29 @@ export async function POST(req: NextRequest, { params }: Params) {
       weight,
       reps,
       volume: setVolume,
-      epley1RM: setEpley,
+      oneRepMax: setOneRepMax,
     },
   })
 
   // Recompute session aggregates
   const allSets = [...workoutSession.sets, { weight, reps }]
   const newTotalVolume = sessionVolume(allSets)
-  const newBest1RM = bestEpley(allSets)
+  const newBest1RM = bestBrzycki(allSets)
 
-  // Find prior sessions' best volume (exclude current session)
+  // Find prior sessions' best volume and best 1RM (exclude current session) -
+  // kept as two independent PR checks on purpose: a single heavy set
+  // shouldn't be judged the same way as three consistently solid sets
   const priorBest = await prisma.workoutSession.aggregate({
     where: {
       userId: workoutSession.userId,
       exerciseId: workoutSession.exerciseId,
       id: { not: sessionId },
     },
-    _max: { totalVolume: true },
+    _max: { totalVolume: true, estimated1RM: true },
   })
-  const priorMax = priorBest._max.totalVolume
 
-  const isPR = isNewVolumePR(newTotalVolume, priorMax)
+  const isVolumePR = isNewVolumePR(newTotalVolume, priorBest._max.totalVolume)
+  const isRepMaxPR = isNewRepMaxPR(newBest1RM, priorBest._max.estimated1RM)
 
   // Update session
   const updatedSession = await prisma.workoutSession.update({
@@ -66,7 +74,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     data: {
       totalVolume: newTotalVolume,
       estimated1RM: newBest1RM,
-      isVolumePR: isPR,
+      isVolumePR,
+      isRepMaxPR,
     },
   })
 
@@ -76,7 +85,8 @@ export async function POST(req: NextRequest, { params }: Params) {
       id: updatedSession.id,
       totalVolume: updatedSession.totalVolume,
       estimated1RM: updatedSession.estimated1RM,
-      isVolumePR: isPR,
+      isVolumePR,
+      isRepMaxPR,
     },
   })
 }

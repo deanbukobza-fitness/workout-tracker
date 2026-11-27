@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
-import { bestEpley } from '@/lib/calculations'
 import { assignLevel, computeDistribution } from '@/lib/level-utils'
 
 type Params = { params: Promise<{ exerciseId: string }> }

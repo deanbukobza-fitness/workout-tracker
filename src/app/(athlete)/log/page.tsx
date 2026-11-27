@@ -1,6 +1,6 @@
 import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
-import { currentMonthKey } from '@/lib/date-utils'
+import { getTodaysKeyExercises } from '@/lib/key-exercises'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -14,14 +14,9 @@ export default async function LogPage({
   await getSession()
 
   const { q } = await searchParams
-  const monthKey = currentMonthKey()
 
   const [keyExercises, allExercises] = await Promise.all([
-    prisma.monthlyKeyExercise.findMany({
-      where: { monthKey },
-      include: { exercise: true },
-      orderBy: { slot: 'asc' },
-    }),
+    getTodaysKeyExercises(),
     prisma.exercise.findMany({
       where: {
         isActive: true,
@@ -31,7 +26,7 @@ export default async function LogPage({
     }),
   ])
 
-  const keyIds = new Set(keyExercises.map((k) => k.exerciseId))
+  const keyIds = new Set(keyExercises.map((k) => k.exercise.id))
 
   return (
     <div className="p-4 space-y-5 max-w-xl mx-auto">
@@ -53,7 +48,7 @@ export default async function LogPage({
       {/* Key exercises (always shown) */}
       {!q && keyExercises.length > 0 && (
         <section>
-          <h2 className="font-semibold text-sm text-pink-600 mb-2">🔑 תרגילי מפתח החודש</h2>
+          <h2 className="font-semibold text-sm text-pink-600 mb-2">🔑 תרגילי היום</h2>
           <div className="space-y-2">
             {keyExercises.map(({ slot, exercise }) => (
               <Link
