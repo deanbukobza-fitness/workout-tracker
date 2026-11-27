@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs'
 import { encode } from '@auth/core/jwt'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { normalizePhone } from '@/lib/phone-utils'
 
 export async function loginAction(formData: FormData) {
   const email = (formData.get('email') as string)?.trim().toLowerCase()
@@ -55,12 +56,17 @@ export async function registerAction(
   const name = (formData.get('name') as string)?.trim()
   const email = (formData.get('email') as string)?.trim().toLowerCase()
   const password = formData.get('password') as string
+  const rawPhone = (formData.get('phone') as string)?.trim()
 
-  if (!name || !email || !password) {
+  if (!name || !email || !password || !rawPhone) {
     return { error: 'יש למלא את כל השדות' }
   }
   if (password.length < 6) {
     return { error: 'הסיסמה חייבת להכיל לפחות 6 תווים' }
+  }
+  const phone = normalizePhone(rawPhone)
+  if (!phone) {
+    return { error: 'מספר טלפון לא תקין' }
   }
 
   const existing = await prisma.user.findUnique({ where: { email } })
@@ -70,7 +76,7 @@ export async function registerAction(
 
   const passwordHash = await bcrypt.hash(password, 12)
   await prisma.user.create({
-    data: { name, email, passwordHash },
+    data: { name, email, passwordHash, phone },
   })
 
   redirect('/login?registered=1')
