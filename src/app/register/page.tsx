@@ -35,6 +35,10 @@ export default function RegisterPage() {
               <Input id="email" name="email" type="email" placeholder="your@email.com" required />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="phone">מספר טלפון</Label>
+              <Input id="phone" name="phone" type="tel" placeholder="050-1234567" required />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="password">סיסמה</Label>
               <Input
                 id="password"

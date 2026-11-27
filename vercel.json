@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/sync-daily-exercises",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/sync-boost-subscriptions",
+      "schedule": "15 2 * * *"
     }
   ]
 }
