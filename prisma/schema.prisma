@@ -15,6 +15,7 @@ model User {
   name         String
   passwordHash String
   role         Role     @default(ATHLETE)
+  bodyweightKg Float?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -96,9 +97,25 @@ model Benchmark {
   levelOrder Int
 
   exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  points   BenchmarkPoint[]
 
   @@unique([exerciseId, levelOrder])
   @@index([exerciseId])
+}
+
+// A bodyweight-bracket point for a benchmark level (e.g. from strengthlevel.com's
+// "By Bodyweight" table), used to interpolate a level's threshold to an
+// athlete's own bodyweight instead of the single flat Benchmark.minWeight.
+model BenchmarkPoint {
+  id           String @id @default(cuid())
+  benchmarkId  String
+  bodyweightKg Float
+  minWeight    Float
+
+  benchmark Benchmark @relation(fields: [benchmarkId], references: [id], onDelete: Cascade)
+
+  @@unique([benchmarkId, bodyweightKg])
+  @@index([benchmarkId])
 }
 
 // ─── Monthly Key Exercises ────────────────────────────────────────────────────

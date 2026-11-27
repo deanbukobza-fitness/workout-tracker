@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import ExerciseForm from '@/components/admin/ExerciseForm'
+import BenchmarkCurveSync from '@/components/admin/BenchmarkCurveSync'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 
@@ -15,6 +16,10 @@ export default async function EditExercisePage({ params }: Params) {
   })
   if (!exercise) redirect('/admin/exercises')
 
+  const pointCount = await prisma.benchmarkPoint.count({
+    where: { benchmark: { exerciseId: id } },
+  })
+
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <Link
@@ -25,6 +30,7 @@ export default async function EditExercisePage({ params }: Params) {
         חזרה לרשימה
       </Link>
       <h1 className="text-2xl font-bold">עריכת תרגיל: {exercise.name}</h1>
+      <BenchmarkCurveSync exerciseId={exercise.id} pointCount={pointCount} />
       <ExerciseForm
         initialData={{
           id: exercise.id,
