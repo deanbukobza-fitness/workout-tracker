@@ -158,6 +158,7 @@ model WorkoutSession {
   totalVolume  Float         @default(0)
   estimated1RM Float         @default(0)
   isVolumePR   Boolean       @default(false)
+  isRepMaxPR   Boolean       @default(false)
   source       WorkoutSource @default(SELF)
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -180,7 +181,7 @@ model WorkoutSet {
   weight    Float
   reps      Int
   volume    Float
-  epley1RM  Float
+  oneRepMax Float
 
   session WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 

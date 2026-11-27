@@ -1,32 +1,18 @@
 import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
-import { currentMonthKey, hebrewMonthLabel, formatDate, todayDateOnly } from '@/lib/date-utils'
+import { currentMonthKey, hebrewMonthLabel, formatDate } from '@/lib/date-utils'
+import { getTodaysKeyExercises } from '@/lib/key-exercises'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Trophy } from 'lucide-react'
+import { Trophy, Plus } from 'lucide-react'
 
 export default async function DashboardPage() {
   const session = await getSession()
   if (!session) return null
 
   const monthKey = currentMonthKey()
-
-  // Today's exercises, synced from the workout-builder plan calendar
-  const dailyKeyExercises = await prisma.dailyKeyExercise.findMany({
-    where: { date: todayDateOnly() },
-    include: { exercise: true },
-    orderBy: { slot: 'asc' },
-  })
-
-  // Fallback: this month's 4 key exercises (used until a daily sync has run)
-  const keyExercises = dailyKeyExercises.length > 0
-    ? []
-    : await prisma.monthlyKeyExercise.findMany({
-        where: { monthKey },
-        include: { exercise: true },
-        orderBy: { slot: 'asc' },
-      })
+  const keyExercises = await getTodaysKeyExercises()
 
   // Recent sessions
   const recentSessions = await prisma.workoutSession.findMany({
@@ -45,27 +31,17 @@ export default async function DashboardPage() {
         <p className="text-sm text-muted-foreground mt-0.5">{hebrewMonthLabel(monthKey)}</p>
       </div>
 
-      {/* Key exercises */}
-      <section>
-        <h2 className="font-bold text-lg mb-3 flex items-center gap-2">
-          {dailyKeyExercises.length > 0 ? '🔑 תרגילי היום' : '🔑 תרגילי המפתח החודש'}
-        </h2>
-        {dailyKeyExercises.length === 0 && keyExercises.length === 0 ? (
+      {/* Key exercises: one big, simple button */}
+      <section className="flex flex-col items-center py-2">
+        {keyExercises.length === 0 ? (
           <p className="text-muted-foreground text-sm">לא הוגדרו תרגילי מפתח להיום</p>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {(dailyKeyExercises.length > 0 ? dailyKeyExercises : keyExercises).map(({ slot, exercise }) => (
-              <Link key={slot} href={`/log/${exercise.id}`}>
-                <Card className="hover:shadow-md transition-shadow cursor-pointer border-pink-200 bg-pink-50 hover:bg-pink-100">
-                  <CardContent className="p-3">
-                    <div className="text-xs text-pink-400 font-medium mb-1">תרגיל {slot}</div>
-                    <div className="font-bold text-sm leading-tight">{exercise.name}</div>
-                    <div className="mt-2 text-xs text-pink-600 font-medium">אימון עכשיו →</div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+          <Link href="/log/today" className="flex flex-col items-center gap-2">
+            <div className="flex items-center justify-center h-20 w-20 rounded-full bg-pink-600 hover:bg-pink-700 transition-colors shadow-lg">
+              <Plus size={40} className="text-white" strokeWidth={2.5} />
+            </div>
+            <span className="font-bold text-pink-600">תרגיל היום</span>
+          </Link>
         )}
       </section>
 
