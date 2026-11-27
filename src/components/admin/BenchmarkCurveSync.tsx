@@ -9,9 +9,10 @@ import { RefreshCw } from 'lucide-react'
 interface Props {
   exerciseId: string
   pointCount: number
+  agePointCount: number
 }
 
-export default function BenchmarkCurveSync({ exerciseId, pointCount }: Props) {
+export default function BenchmarkCurveSync({ exerciseId, pointCount, agePointCount }: Props) {
   const [slug, setSlug] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -35,7 +36,7 @@ export default function BenchmarkCurveSync({ exerciseId, pointCount }: Props) {
       } else {
         setIsError(false)
         setMessage(
-          `נשמרו ${data.bracketCount} נקודות משקל-גוף (${data.bodyweightRange[0]}-${data.bodyweightRange[1]} ק"ג)`
+          `נשמרו ${data.bracketCount} נקודות משקל-גוף (${data.bodyweightRange[0]}-${data.bodyweightRange[1]} ק"ג) ו-${data.ageBracketCount} נקודות גיל (${data.ageRange[0]}-${data.ageRange[1]})`
         )
         router.refresh()
       }
@@ -49,10 +50,10 @@ export default function BenchmarkCurveSync({ exerciseId, pointCount }: Props) {
 
   return (
     <div className="rounded-lg border border-border p-4 space-y-2">
-      <div className="font-medium text-sm">סף לפי משקל גוף (strengthlevel.com)</div>
+      <div className="font-medium text-sm">סף לפי משקל גוף וגיל (strengthlevel.com)</div>
       <p className="text-xs text-muted-foreground">
         {pointCount > 0
-          ? `קיימות ${pointCount} נקודות משקל-גוף - המד רמה מתאים את הסף למשקל של כל מתאמנת`
+          ? `קיימות ${pointCount} נקודות משקל-גוף ו-${agePointCount} נקודות גיל - המד רמה מתאים את הסף למשקל ולגיל של כל מתאמנת שהזינה אותם`
           : 'עדיין לא הוגדר - המד רמה משתמש בסף האחיד הקבוע למעלה'}
       </p>
       <div className="flex gap-2">
