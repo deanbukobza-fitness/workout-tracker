@@ -16,6 +16,7 @@ model User {
   passwordHash String
   role         Role     @default(ATHLETE)
   bodyweightKg Float?
+  birthDate    DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -98,6 +99,7 @@ model Benchmark {
 
   exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   points   BenchmarkPoint[]
+  agePoints BenchmarkAgePoint[]
 
   @@unique([exerciseId, levelOrder])
   @@index([exerciseId])
@@ -115,6 +117,22 @@ model BenchmarkPoint {
   benchmark Benchmark @relation(fields: [benchmarkId], references: [id], onDelete: Cascade)
 
   @@unique([benchmarkId, bodyweightKg])
+  @@index([benchmarkId])
+}
+
+// An age-bracket point for a benchmark level (strengthlevel.com's "By Age"
+// table). Combined with BenchmarkPoint to adjust a level's threshold for
+// both an athlete's bodyweight and her age - see thresholdFor() in
+// src/lib/level-utils.ts for how the two are combined.
+model BenchmarkAgePoint {
+  id          String @id @default(cuid())
+  benchmarkId String
+  ageYears    Int
+  minWeight   Float
+
+  benchmark Benchmark @relation(fields: [benchmarkId], references: [id], onDelete: Cascade)
+
+  @@unique([benchmarkId, ageYears])
   @@index([benchmarkId])
 }
 

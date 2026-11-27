@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { formatDate } from '@/lib/date-utils'
 import { Trophy, Dumbbell, Calendar } from 'lucide-react'
 import BodyweightForm from '@/components/profile/BodyweightForm'
+import BirthDateForm from '@/components/profile/BirthDateForm'
 
 export default async function ProfilePage() {
   const session = await getSession()
@@ -19,7 +20,10 @@ export default async function ProfilePage() {
       orderBy: { loggedAt: 'desc' },
       select: { loggedAt: true },
     }),
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { bodyweightKg: true } }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { bodyweightKg: true, birthDate: true },
+    }),
   ])
 
   return (
@@ -60,6 +64,9 @@ export default async function ProfilePage() {
       </div>
 
       <BodyweightForm initialBodyweightKg={me?.bodyweightKg ?? null} />
+      <BirthDateForm
+        initialBirthDate={me?.birthDate ? me.birthDate.toISOString().slice(0, 10) : null}
+      />
 
       {/* Sign out */}
       <form

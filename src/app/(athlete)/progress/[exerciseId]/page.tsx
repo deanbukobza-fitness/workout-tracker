@@ -2,6 +2,7 @@ import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { assignLevel, computeDistribution } from '@/lib/level-utils'
+import { ageFromBirthDate } from '@/lib/date-utils'
 import LevelIndicator from '@/components/progress/LevelIndicator'
 import ProgressCharts from '@/components/progress/ProgressCharts'
 import Link from 'next/link'
@@ -17,14 +18,17 @@ export default async function ExerciseProgressPage({ params }: Params) {
 
   const exercise = await prisma.exercise.findUnique({
     where: { id: exerciseId },
-    include: { benchmarks: { orderBy: { levelOrder: 'asc' }, include: { points: true } } },
+    include: {
+      benchmarks: { orderBy: { levelOrder: 'asc' }, include: { points: true, agePoints: true } },
+    },
   })
   if (!exercise) redirect('/progress')
 
   const me = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { bodyweightKg: true },
+    select: { bodyweightKg: true, birthDate: true },
   })
+  const myAge = me?.birthDate ? ageFromBirthDate(me.birthDate) : null
 
   // My sessions
   const mySessions = await prisma.workoutSession.findMany({
@@ -34,7 +38,7 @@ export default async function ExerciseProgressPage({ params }: Params) {
   })
 
   const myBest1RM = mySessions.length > 0 ? Math.max(...mySessions.map((s) => s.estimated1RM)) : 0
-  const myLevel = assignLevel(myBest1RM, exercise.benchmarks, me?.bodyweightKg)
+  const myLevel = assignLevel(myBest1RM, exercise.benchmarks, me?.bodyweightKg, myAge)
 
   // Studio distribution
   const allAthletesSessions = await prisma.workoutSession.groupBy({
@@ -44,13 +48,17 @@ export default async function ExerciseProgressPage({ params }: Params) {
   })
   const athleteUsers = await prisma.user.findMany({
     where: { id: { in: allAthletesSessions.map((a) => a.userId) } },
-    select: { id: true, bodyweightKg: true },
+    select: { id: true, bodyweightKg: true, birthDate: true },
   })
-  const bodyweightByUserId = new Map(athleteUsers.map((u) => [u.id, u.bodyweightKg]))
-  const athletes = allAthletesSessions.map((a) => ({
-    best1RM: a._max.estimated1RM ?? 0,
-    bodyweightKg: bodyweightByUserId.get(a.userId),
-  }))
+  const athleteById = new Map(athleteUsers.map((u) => [u.id, u]))
+  const athletes = allAthletesSessions.map((a) => {
+    const athlete = athleteById.get(a.userId)
+    return {
+      best1RM: a._max.estimated1RM ?? 0,
+      bodyweightKg: athlete?.bodyweightKg,
+      ageYears: athlete?.birthDate ? ageFromBirthDate(athlete.birthDate) : null,
+    }
+  })
   const distribution = computeDistribution(athletes, exercise.benchmarks)
 
   const sessionData = mySessions.map((s) => ({

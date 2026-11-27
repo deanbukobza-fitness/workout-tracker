@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
-import { fetchFemaleBodyweightBrackets } from '@/lib/strengthlevel'
+import { fetchFemaleBodyweightBrackets, fetchFemaleAgeBrackets } from '@/lib/strengthlevel'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -30,9 +30,12 @@ export async function POST(req: NextRequest, { params }: Params) {
     )
   }
 
-  let brackets
+  let brackets, ageBrackets
   try {
-    brackets = await fetchFemaleBodyweightBrackets(slug)
+    ;[brackets, ageBrackets] = await Promise.all([
+      fetchFemaleBodyweightBrackets(slug),
+      fetchFemaleAgeBrackets(slug),
+    ])
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 502 })
   }
@@ -54,6 +57,14 @@ export async function POST(req: NextRequest, { params }: Params) {
           minWeight: br.levels[i],
         })),
       }),
+      prisma.benchmarkAgePoint.deleteMany({ where: { benchmarkId: b.id } }),
+      prisma.benchmarkAgePoint.createMany({
+        data: ageBrackets.map((br) => ({
+          benchmarkId: b.id,
+          ageYears: br.ageYears,
+          minWeight: br.levels[i],
+        })),
+      }),
     ])
   )
 
@@ -61,5 +72,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     synced: true,
     bracketCount: brackets.length,
     bodyweightRange: [brackets[0].bodyweightKg, brackets[brackets.length - 1].bodyweightKg],
+    ageBracketCount: ageBrackets.length,
+    ageRange: [ageBrackets[0].ageYears, ageBrackets[ageBrackets.length - 1].ageYears],
   })
 }

@@ -32,3 +32,14 @@ export function daysSince(date: Date | string): number {
   const diff = Date.now() - d.getTime()
   return Math.floor(diff / (1000 * 60 * 60 * 24))
 }
+
+// Whole years since a birth date, as of today
+export function ageFromBirthDate(birthDate: Date | string): number {
+  const d = typeof birthDate === 'string' ? new Date(birthDate) : birthDate
+  const now = new Date()
+  let age = now.getFullYear() - d.getFullYear()
+  const hadBirthdayThisYear =
+    now.getMonth() > d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() >= d.getDate())
+  if (!hadBirthdayThisYear) age--
+  return age
+}

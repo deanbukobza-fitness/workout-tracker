@@ -1,7 +1,7 @@
 import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import { todayDateOnly } from '@/lib/date-utils'
+import { todayDateOnly, ageFromBirthDate } from '@/lib/date-utils'
 import KeyExerciseLogger from '@/components/logging/KeyExerciseLogger'
 
 type Params = { params: Promise<{ exerciseId: string }> }
@@ -15,9 +15,14 @@ export default async function TodayKeyExercisePage({ params }: Params) {
   const [exercise, me] = await Promise.all([
     prisma.exercise.findUnique({
       where: { id: exerciseId },
-      include: { benchmarks: { orderBy: { levelOrder: 'asc' }, include: { points: true } } },
+      include: {
+        benchmarks: { orderBy: { levelOrder: 'asc' }, include: { points: true, agePoints: true } },
+      },
     }),
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { bodyweightKg: true } }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { bodyweightKg: true, birthDate: true },
+    }),
   ])
   if (!exercise) redirect('/log/today')
 
@@ -42,6 +47,7 @@ export default async function TodayKeyExercisePage({ params }: Params) {
       youtubeUrl={exercise.youtubeUrl}
       benchmarks={exercise.benchmarks}
       bodyweightKg={me?.bodyweightKg ?? null}
+      ageYears={me?.birthDate ? ageFromBirthDate(me.birthDate) : null}
       initialSets={workoutSession.sets.map((s) => ({
         setNumber: s.setNumber,
         weight: s.weight,

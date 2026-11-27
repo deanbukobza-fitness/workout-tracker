@@ -25,6 +25,7 @@ interface Props {
   youtubeUrl?: string | null
   benchmarks: BenchmarkData[]
   bodyweightKg: number | null
+  ageYears: number | null
   initialSets: SetData[]
   initialEstimated1RM: number
 }
@@ -35,6 +36,7 @@ export default function KeyExerciseLogger({
   youtubeUrl,
   benchmarks,
   bodyweightKg,
+  ageYears,
   initialSets,
   initialEstimated1RM,
 }: Props) {
@@ -52,8 +54,8 @@ export default function KeyExerciseLogger({
   const finished = sets.length >= TOTAL_SETS
 
   const level = useMemo(
-    () => (finished ? assignLevel(estimated1RM, benchmarks, bodyweightKg) : null),
-    [finished, estimated1RM, benchmarks, bodyweightKg]
+    () => (finished ? assignLevel(estimated1RM, benchmarks, bodyweightKg, ageYears) : null),
+    [finished, estimated1RM, benchmarks, bodyweightKg, ageYears]
   )
 
   const saveSet = useCallback(async () => {
