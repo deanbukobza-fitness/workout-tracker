@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Plus, Pencil } from 'lucide-react'
 import DeleteExerciseButton from './DeleteExerciseButton'
 import SyncExerciseCatalogButton from './SyncExerciseCatalogButton'
+import InitBenchmarkLevelsButton from './InitBenchmarkLevelsButton'
 import ToggleActiveButton from './ToggleActiveButton'
 
 export default async function AdminExercisesPage({
@@ -40,6 +41,7 @@ export default async function AdminExercisesPage({
       </div>
 
       <SyncExerciseCatalogButton />
+      <InitBenchmarkLevelsButton />
 
       <div className="flex gap-2 border-b border-border">
         <Link

@@ -20,9 +20,12 @@ export async function POST(req: NextRequest, { params }: Params) {
     where: { exerciseId: id },
     orderBy: { levelOrder: 'asc' },
   })
-  if (benchmarks.length !== 5) {
+  if (benchmarks.length !== 4) {
     return NextResponse.json(
-      { error: 'יש להגדיר קודם בדיוק 5 רמות (Benchmarks) לתרגיל הזה' },
+      {
+        error:
+          'יש להגדיר קודם 4 רמות (Benchmarks) לתרגיל הזה - אפשר ללחוץ על "אתחול רמות" בעמוד רשימת התרגילים',
+      },
       { status: 400 }
     )
   }
@@ -34,8 +37,15 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: (err as Error).message }, { status: 502 })
   }
 
+  // strengthlevel.com has 5 tiers (Beginner..Elite); only the first 4 are used -
+  // Elite is intentionally dropped as irrelevant for studio athletes. The flat
+  // minWeight (fallback for an athlete with no bodyweight entered) is set from
+  // the middle bodyweight bracket.
+  const reference = brackets[Math.floor((brackets.length - 1) / 2)]
+
   await prisma.$transaction(
     benchmarks.flatMap((b, i) => [
+      prisma.benchmark.update({ where: { id: b.id }, data: { minWeight: reference.levels[i] } }),
       prisma.benchmarkPoint.deleteMany({ where: { benchmarkId: b.id } }),
       prisma.benchmarkPoint.createMany({
         data: brackets.map((br) => ({
